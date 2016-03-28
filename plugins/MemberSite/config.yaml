@@ -7,3 +7,8 @@ author_name: <__trans phrase="Kenichi Naito">
 description: <__trans phrase="MemberSite for MT">
 l10n_class: MemberSite::L10N
 
+#applications:
+#  cms:
+#    methods:
+#      list_member: $MemberSite::MemberSite::Plugin::list_member
+
