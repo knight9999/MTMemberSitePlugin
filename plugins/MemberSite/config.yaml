@@ -1,0 +1,9 @@
+id: MemberSite
+name: MemberSite
+version: 1.0
+author_link: http://d.hatena.ne.jp/knight_9999/
+doc_link: http://d.hatena.ne.jp/knight_9999/
+author_name: <__trans phrase="Kenichi Naito">
+description: <__trans phrase="MemberSite for MT">
+l10n_class: MemberSite::L10N
+
