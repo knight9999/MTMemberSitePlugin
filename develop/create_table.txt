@@ -1,0 +1,19 @@
+例：mysql
+
+create table membersite_members (
+  id SERIAL,
+  account text,
+  nick_name text,
+  email text,
+  passwd text,
+  activate_key text,
+  activate_code text,
+  last_login_at datetime,
+  created_at datetime,
+  updated_at datetime,
+  activate_at datetime,
+  paused_at datetime,
+  deleted_at datetime,
+  index(id)
+) engine=InnoDB;
+
