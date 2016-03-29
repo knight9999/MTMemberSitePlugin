@@ -1,50 +1,103 @@
-function login(btn) {
-  var form = btn.form;
-  var account = form["account"].value;
-  var password = form["passwd"].value;
-  ajax_post({ 
-	 url : "member_site_action.php",
-	 data: { action : "login" , account : account , password : password } ,
-	 success : function($data) {
-		 console.log( JSON.stringify( $data ) );
-		 alert( JSON.stringify( $data ) );
-	 },
-	 failure : function(err) {
-		 alert("ERROR");
-	 }
-  });
+
+function MemberSite() { 
+	this.baseUrl = "";		
+	this.me = null;
 }
 
-function isLogined() {
-	  ajax_post({ 
-			 url : "member_site_action.php",
-			 data: { action : "me" } ,
-			 success : function($data) {
-				 console.log( JSON.stringify( $data ) );
-				 alert( JSON.stringify( $data ) );
-			 },
-			 failure : function(err) {
-				 alert("ERROR");
-			 }
-		  });
+MemberSite.prototype.apiUrl = function(url) {
+	return this.baseUrl + url;
+};
+
+MemberSite.prototype.guard = function(success) {
+	if (success == null) {
+		success = function() { };
+	} else if (typeof success == "string") {
+		var url = success;
+		success = function() {
+			location.href = url;
+		}
+	}
+	return success;
+};
+
+MemberSite.prototype.login = function(account, password, success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	this.ajax_post({ 
+		url : this.apiUrl( "member_site_action.php" ),
+		data: { action : "login" , account : account , password : password } ,
+		success : function(data) {
+//			console.log( JSON.stringify( data ) );
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = data.data;
+				success( data.data );
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
+};
+
+MemberSite.prototype.getMe = function(success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	this.ajax_post({ 
+		url : this.apiUrl( "member_site_action.php" ),
+		data: { action : "me" } ,
+		success : function(data) {
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = data.data;
+				success( data.data );
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
 }
 
+MemberSite.prototype.logout = function(success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	this.ajax_post({ 
+		url : this.apiUrl( "member_site_action.php" ),
+		data: { action : "logout" } ,
+		success : function(data) {
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = null;
+				success();
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
+}
+
+window.memberSite = new MemberSite();
+
+var settings = window.memberSiteSettings;
+
+if ( !(settings && settings.NoLoadLoginData) ) {
+	window.addEventListener("DOMContentLoaded" , function() { 
+		memberSite.getMe();
+	}, false );
+}
 function logout() {
-	  ajax_post({ 
-			 url : "member_site_action.php",
-			 data: { action : "logout" } ,
-			 success : function($data) {
-				 console.log( JSON.stringify( $data ) );
-				 alert( JSON.stringify( $data ) );
-			 },
-			 failure : function(err) {
-				 alert("ERROR");
-			 }
-		  });
 }
 
 
-function ajax_post(options) {
+MemberSite.prototype.ajax_post = function(options) {
     var url = options.url;
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
@@ -56,7 +109,7 @@ function ajax_post(options) {
         } else {
           if ( (200 <= xhr.status && xhr.status < 300) || xhr.status == 304 ) {
             if (options.success) {
-              options.success( JSON.parse(xhr.responseText) ); // 戻り値はJSONと決め打ち
+              options.success( JSON.parse(xhr.responseText) ); 
             }
           } 
         }

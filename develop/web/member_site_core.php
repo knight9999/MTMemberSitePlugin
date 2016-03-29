@@ -5,25 +5,16 @@ $database_user = "root";
 $database_password = "";
 $database_name="mt_membersite";
 $table = "membersite_members";
-$user_readable_fields = "";
+$user_readable_fields = "account,nick_name,email,image";
 $user_updatable_fields = "";
 
 
-function dispatchAction() {
-	$action = $_POST["action"];
-	if ($action == "login") {
-		return loginAction();
-	} else if ($action == "me") {
-		return meAction();
-	} else if ($action == "logout") {
-		return logoutAction();
-	}
-}
+// Basic
 
 function db_open() {
 	global  $database_server , $database_user , $database_password;
 	$db = mysql_connect( $database_server , $database_user , $database_password );
-    mysql_select_db( "mt_membersite",$db);
+	mysql_select_db( "mt_membersite",$db);
 	return $db;
 }
 
@@ -53,6 +44,53 @@ function encryptPassword($password) {
 	return $passwd;
 }
 
+function filterUserData($userData) {
+	global $user_readable_fields;
+	$result = array();
+	$hash = explode(",",$user_readable_fields);
+	foreach( $hash as $key) {
+		$result[$key] = $userData[$key];
+	}
+	return $result;
+}
+
+// PHP Lib
+
+function isLogined() {
+	session_start();
+	$me = $_SESSION["me"];
+	session_write_close();
+	if ($me) { 
+		return true; 
+	}
+	return false;
+}
+
+function me($key) {
+	session_start();
+	$me = $_SESSION["me"];
+	session_write_close();
+	if (isset( $key )) {
+		return $me[$key];
+	}
+	return $me;
+}
+
+
+// JavaScript API
+
+function dispatchAction() {
+	$action = $_POST["action"];
+	if ($action == "login") {
+		return loginAction();
+	} else if ($action == "me") {
+		return meAction();
+	} else if ($action == "logout") {
+		return logoutAction();
+	}
+}
+
+
 function meAction() {
 	session_start();
 	$me = $_SESSION["me"];
@@ -61,7 +99,7 @@ function meAction() {
 	if ($me) {
 		$data = array( "status" => "OK" ,
 			"message" => "PHP Task is finished",
-	    	"data" => $me );
+	    	"data" => filterUserData( $me ) );
 	} else {
 		$data = array( "status" => "ERROR" ,
 				"code" => 101,
@@ -125,7 +163,7 @@ function loginAction() {
 		
 		$data = array( "status" => "OK" ,
 			"message" => "PHP Task is finished",
-	    	"data" => $results[0] );
+	    	"data" => filterUserData( $results[0] ) );
  	} else {
  		$data = array( "status" => "ERROR" ,
  				"code" => 101,
