@@ -6,7 +6,7 @@ $database_password = "";
 $database_name="mt_membersite";
 $table = "membersite_members";
 $user_readable_fields = "account,nick_name,email,image";
-$user_updatable_fields = "";
+$user_updatable_fields = "account,nick_name,email,image";
 
 
 // Basic
@@ -49,7 +49,9 @@ function filterUserData($userData) {
 	$result = array();
 	$hash = explode(",",$user_readable_fields);
 	foreach( $hash as $key) {
-		$result[$key] = $userData[$key];
+		if (isset( $userData[$key]) ) {
+			$result[$key] = $userData[$key];
+		}
 	}
 	return $result;
 }
@@ -57,25 +59,42 @@ function filterUserData($userData) {
 // PHP Lib
 
 function isLogined() {
-	session_start();
-	$me = $_SESSION["me"];
-	session_write_close();
+	$me = me();
 	if ($me) { 
 		return true; 
 	}
 	return false;
 }
 
-function me($key) {
+function me($key = null) {
 	session_start();
-	$me = $_SESSION["me"];
+	if (isset($_SESSION['me'])) {
+		$me = $_SESSION["me"];
+	} else {
+		$me = null;
+	}
 	session_write_close();
-	if (isset( $key )) {
+	if ($key != null) {
 		return $me[$key];
 	}
 	return $me;
 }
 
+function getUserDataFromRes($res,$fields) {
+	$results = array();
+	if ($res) {
+		while ($row = mysql_fetch_assoc($res)) {
+			reset($row);
+			$result = array();
+			foreach ($fields as $key => $type) {
+				$value = $row[$key];
+				$result[$key] = $value;
+			}
+			array_push( $results , $result );
+		}
+	}
+	return $results;
+}
 
 // JavaScript API
 
@@ -87,15 +106,15 @@ function dispatchAction() {
 		return meAction();
 	} else if ($action == "logout") {
 		return logoutAction();
+	} else if ($action == "edit") {
+		return editAction();
 	}
 }
 
 
 function meAction() {
-	session_start();
-	$me = $_SESSION["me"];
-	session_write_close();
-	
+	$me = me();
+		
 	if ($me) {
 		$data = array( "status" => "OK" ,
 			"message" => "PHP Task is finished",
@@ -110,17 +129,82 @@ function meAction() {
 }
 
 function logoutAction() {
-	session_start();
-	$me = $_SESSION["me"];
+	$me = me();
 	if ($me) {
+		session_start();
 		unset( $_SESSION["me"] );
+		session_write_close();
 		$data = array( "status" => "OK" ,
 			"message" => "do Logout");
 	} else {
 		$data = array( "status" => "ERROR",
+			"code" => 102,
 			"message" => "you are not logined");
 	}
-	session_write_close();
+	return $data;
+}
+
+function editAction() {
+	global $table;
+	global $user_updatable_fields;
+	
+	$me = me();
+	
+	if ($me) {	
+		$db = db_open();
+	
+		$fields = getFields($db);
+		
+		$list = explode(",",$user_updatable_fields);
+		$hash = array();
+		foreach ($list as $key) {
+			if (isset( $_POST[$key] ) ) {
+				if ($_POST[$key] == null) {
+					$hash[$key] = "NULL";
+				} else {
+					$hash[$key]= mysql_real_escape_string( $_POST[$key] );
+				}
+			}
+		}	
+		$setList = array();
+		foreach( $hash as $key => $_val ) {
+			if ($fields[$key] == "text") {
+				$val = "'" . $_val . "'";
+			} else {
+				$val = $_val;
+			}
+			array_push($setList , $key . "=" . $val );
+		}	
+		$sets = implode( ',' , $setList );
+		$id =  mysql_real_escape_string( $me['id'] );
+		$sql = "UPDATE " . $table . " SET " . $sets . " WHERE ID = " . $id . ";";
+		//TODO Transaction
+		$res = mysql_query($sql,$db);
+		if ($res) {
+			$sql = "SELECT * FROM " . $table . " WHERE ID = ". $id . ";";
+			$res = mysql_query($sql,$db);
+			if ($res) {
+				$results = getUserDataFromRes($res,$fields);
+ 				session_start();
+ 				$_SESSION["me"] = $results[0];
+ 				session_write_close();
+				$data = array( "status" => "OK", "data"=> filterUserData( $results[0] ) );
+			} else {
+				$data = array( "status" => "ERROR",
+						"code" => 103,
+						"message" => "you are not logined");
+			}
+		} else {
+			$data = array( "status" => "ERROR",
+					"code" => 103,
+					"message" => "you are not logined");
+		}	
+		db_close($db);
+	} else {
+		$data = array( "status" => "ERROR",
+				"code" => 104,
+				"message" => "you are not logined");
+	}
 	return $data;
 }
 
@@ -141,35 +225,29 @@ function loginAction() {
 	
 	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
 	$res = mysql_query($sql,$db);
-	$results = array();
 	if ($res) {
-		while ($row = mysql_fetch_assoc($res)) {
-			reset($row);
-			$result = array();
-			foreach ($fields as $key => $type) {
-				$value = $row[$key];
-				$result[$key] = $value;
-			}
-			array_push( $results , $result );
-		}
-	}
+		$results = getUserDataFromRes($res,$fields);
+	 	if (count($results) == 1) {
+ 			session_start();
+ 			$_SESSION["me"] = $results[0];
+ 			session_write_close();
 		
-	db_close($db);
-	
- 	if (count($results) == 1) {
- 		session_start();
- 		$_SESSION["me"] = $results[0];
- 		session_write_close();
-		
-		$data = array( "status" => "OK" ,
-			"message" => "PHP Task is finished",
-	    	"data" => filterUserData( $results[0] ) );
- 	} else {
- 		$data = array( "status" => "ERROR" ,
+			$data = array( "status" => "OK" ,
+				"message" => "PHP Task is finished",
+		    	"data" => filterUserData( $results[0] ) );
+ 		} else {
+ 			$data = array( "status" => "ERROR" ,
  				"code" => 101,
  				"message" => "There is no user data or multiple data" );
 		
- 	}
+ 		}
+	} else {
+		$data = array( "status" => "ERROR" ,
+				"code" => 101,
+				"message" => "There is no user data or multiple data" );
+	}
+	db_close($db);
+	
 	return $data;
 	
 }

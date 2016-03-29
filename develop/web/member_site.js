@@ -84,6 +84,36 @@ MemberSite.prototype.logout = function(success, failure) {
 	});
 }
 
+MemberSite.prototype.edit = function(userData, success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	var data = { action : "edit" };
+	for (var key in userData) {
+		data[key] = userData[key];
+	}
+	this.ajax_post({ 
+		url : this.apiUrl( "member_site_action.php" ),
+		data: data ,
+		success : function(data) {
+//			console.log( JSON.stringify( data ) );
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = data.data;
+				success( data.data );
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
+};
+
+
+
+
+
 window.memberSite = new MemberSite();
 
 var settings = window.memberSiteSettings;

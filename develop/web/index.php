@@ -5,6 +5,7 @@
     
     <title>SecondWebSite</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="member_site.js"></script>
   </head>
   <body>
   <?php require_once("member_site_action.php"); ?>
@@ -13,6 +14,8 @@
   	Logined : 
   	<?php echo me("account"); ?>,
   	<?php echo me("nick_name"); ?>
+  	&nbsp;
+  	<a href="edit.php">Edit</a>
   <?php else: ?>
   	Logout
   <?php endif ?>
@@ -20,14 +23,13 @@
     <div id="me"></div>
     <form>
       <label>Login</label>
-      <input id="membersite_account" type="text" name="account">
-      <input id="membersite_password" type="password" name="passwd">
+      <input type="text" name="account">
+      <input type="password" name="passwd">
       <button onclick="login(this); return false;">Login</button>
     </form>
     <button onclick="getLatestMe(); return false;">getLatestMe</button><br />
     <button onclick="showMe(); return false;">showMe</button><br />
     <button onclick="logout(); return false;">Logout</button>
-    <script src="member_site.js"></script>
     
     <script>
 	  function login(btn) {
