@@ -233,6 +233,8 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 					} else if ($validation == "Unique") {
 						if ($value != null) {
 							$db = db_open();
+							$fields = getFields($db);
+								
 							// $keyのタイプがstringのときのみ、この処理 TODO 文字列以外に数値の場合の処理も実装する
 							$condition = mysqli_real_escape_string($db,$key) . " = '" .  mysqli_real_escape_string( $db , $value ) . "' AND ";
 							$condition .= " activated_at IS NOT NULL AND ";
