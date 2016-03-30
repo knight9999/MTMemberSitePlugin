@@ -44,6 +44,7 @@
 	    </dd>
     	<button onclick="signup(this); return false;">Signup</button>
     </form>
+    <div id="link"></div>
     <script>
 		function signup(btn) {
 			var form = btn.form;
@@ -52,10 +53,12 @@
 			var nick_name = form["nick_name"].value;
 			var email = form["email"].value;
 			memberSite.signup( { account : account , password : password, nick_name : nick_name , email : email } ,
-					function(data) { alert( "1:" + JSON.stringify(data) ); },
+					function(data) { 
+						alert( JSON.stringify(data) ); 
+					},
 					function(err) { alert( JSON.stringify(err) ); }
 				); 
-}
+			}
     </script>
   </body>
 </html>

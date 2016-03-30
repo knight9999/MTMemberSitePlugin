@@ -236,7 +236,7 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 							// $keyのタイプがstringのときのみ、この処理 TODO 文字列以外に数値の場合の処理も実装する
 							$condition = mysqli_real_escape_string($db,$key) . " = '" .  mysqli_real_escape_string( $db , $value ) . "' AND ";
 							$condition .= " activated_at IS NOT NULL AND ";
-							$condition .= " paused_at is NULL and deleted_at is NULL AND "; 
+							$condition .= " paused_at is NULL and deleted_at is NULL "; 
 							$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
 							$res = mysqli_query($db,$sql);
 							if ($res) {
@@ -306,7 +306,9 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
   		if ($res) {
   			mailTo($hash);
   			$data = array( "status" => "OK" ,
-  					"result" => "OK" );
+  					"result" => "OK" ,
+  					"data" => array( )
+  					);
   		} else {
   			$data = array( "status" => "ERROR" ,
   					"code" => 101,
@@ -321,9 +323,13 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 
 function mailTo($hash) {
 	global $mail_from;
-	error_log( $hash['email'] );
-	error_log( $hash['confirm_key'] );
-	mb_send_mail($hash['email'],'test mail' , "This is a test \n You confirm key = " . $hash['confirm_key'], "From: ". $mail_from );
+	$confirm_key = $hash['confirm_key'];
+	
+	$text = <<<EOT
+	<a href="http://mt101.local/web/activate.php?key=$confirm_key">Activate</a>
+EOT;
+	
+	mb_send_mail($hash['email'],'test mail' , "This is a test \n You confirm key = " . $confirm_key . "\n" . $text , "From: ". $mail_from );
 	
 }
 
