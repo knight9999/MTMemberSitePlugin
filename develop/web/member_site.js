@@ -1,6 +1,6 @@
 
 function MemberSite() { 
-	this.baseUrl = "";		
+	this.baseUrl = "member_site_core/";		
 	this.me = null;
 }
 
@@ -25,7 +25,7 @@ MemberSite.prototype.login = function(account, password, success, failure) {
 	failure = this.guard(failure);
 	var self = this;
 	this.ajax_post({ 
-		url : this.apiUrl( "member_site_action.php" ),
+		url : this.apiUrl( "action.php" ),
 		data: { action : "login" , account : account , password : password } ,
 		success : function(data) {
 //			console.log( JSON.stringify( data ) );
@@ -47,7 +47,7 @@ MemberSite.prototype.getMe = function(success, failure) {
 	failure = this.guard(failure);
 	var self = this;
 	this.ajax_post({ 
-		url : this.apiUrl( "member_site_action.php" ),
+		url : this.apiUrl( "action.php" ),
 		data: { action : "me" } ,
 		success : function(data) {
 			if (data.status == "ERROR") {
@@ -68,7 +68,7 @@ MemberSite.prototype.logout = function(success, failure) {
 	failure = this.guard(failure);
 	var self = this;
 	this.ajax_post({ 
-		url : this.apiUrl( "member_site_action.php" ),
+		url : this.apiUrl( "action.php" ),
 		data: { action : "logout" } ,
 		success : function(data) {
 			if (data.status == "ERROR") {
@@ -88,12 +88,9 @@ MemberSite.prototype.edit = function(userData, success, failure) {
 	success = this.guard(success);
 	failure = this.guard(failure);
 	var self = this;
-	var data = { action : "edit" };
-	for (var key in userData) {
-		data[key] = userData[key];
-	}
+	var data = { action : "edit" , data : userData };
 	this.ajax_post({ 
-		url : this.apiUrl( "member_site_action.php" ),
+		url : this.apiUrl( "action.php" ),
 		data: data ,
 		success : function(data) {
 //			console.log( JSON.stringify( data ) );
@@ -110,6 +107,28 @@ MemberSite.prototype.edit = function(userData, success, failure) {
 	});
 };
 
+MemberSite.prototype.signup = function(userData, success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	var data = { action : "signup" , data : userData };
+	this.ajax_post({ 
+		url : this.apiUrl( "action.php" ),
+		data: data ,
+		success : function(data) {
+//			console.log( JSON.stringify( data ) );
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = data.data;
+				success( data.data );
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
+};
 
 
 
@@ -151,7 +170,14 @@ MemberSite.prototype.ajax_post = function(options) {
     if (options.data != null) {
       for (var key in options.data) {
         var val = options.data[key];
-        querys.push( key + "=" + encodeURIComponent(val) );
+        if (typeof val != "object" ) {
+        	querys.push( encodeURIComponent(key) + "=" + encodeURIComponent(val) );
+        } else {
+        	for (var key2 in val) {
+        		var val2 = val[key2];
+        		querys.push( encodeURIComponent(key) + "[" + encodeURIComponent(key2) + "]" + "=" + encodeURIComponent(val2) );
+        	}
+        }
       }
     }
     var query = querys.join('&');

@@ -7,9 +7,18 @@ $database_name="mt_membersite";
 $table = "membersite_members";
 $user_readable_fields = "account,nick_name,email,image";
 $user_updatable_fields = "account,nick_name,email,image";
+$user_signup_fields = "account,password,nick_name,email";
 
-require_once('member_site_core/basic.php');
-require_once('member_site_core/lib.php');
+$user_signup_validations = array(
+	"account" => array( "Unique" , "Required" , array( "Length>=" , 4 ) , array( "Length<=" , 20 ) ),
+	"password" => array( "Required" , array( "Length>=" , 4) , array( "Length<=" , 20 ) ),
+	"nick_name" => array( "Required" , array( "Length>=" , 4) , array( "Length<=" , 20 )),
+	"email" => array( "EmailFormat" )
+);
+
+
+require_once('basic.php');
+require_once('lib.php');
 
 
 // JavaScript API
@@ -24,6 +33,8 @@ function dispatchAction() {
 		return logoutAction();
 	} else if ($action == "edit") {
 		return editAction();
+	} else if ($action == "signup") {
+		return signupAction();
 	}
 }
 
@@ -71,14 +82,15 @@ function editAction() {
 	
 		$fields = getFields($db);
 		
+		$userdata = $_POST["data"];
 		$list = explode(",",$user_updatable_fields);
 		$hash = array();
 		foreach ($list as $key) {
-			if (isset( $_POST[$key] ) ) {
-				if ($_POST[$key] == null) {
+			if (isset( $userdata[$key] ) ) {
+				if ($userdata[$key] == null) {
 					$hash[$key] = "NULL";
 				} else {
-					$hash[$key]= mysql_real_escape_string( $_POST[$key] );
+					$hash[$key]= mysqli_real_escape_string( $db , $userdata[$key] );
 				}
 			}
 		}	
@@ -92,13 +104,13 @@ function editAction() {
 			array_push($setList , $key . "=" . $val );
 		}	
 		$sets = implode( ',' , $setList );
-		$id =  mysql_real_escape_string( $me['id'] );
+		$id =  mysqli_real_escape_string( $db, $me['id'] );
 		$sql = "UPDATE " . $table . " SET " . $sets . " WHERE ID = " . $id . ";";
 		//TODO Transaction
-		$res = mysql_query($sql,$db);
+		$res = mysqli_query($db, $sql);
 		if ($res) {
 			$sql = "SELECT * FROM " . $table . " WHERE ID = ". $id . ";";
-			$res = mysql_query($sql,$db);
+			$res = mysqli_query($db, $sql);
 			if ($res) {
 				$results = getUserDataFromRes($res,$fields);
  				session_start();
@@ -133,14 +145,14 @@ function loginAction() {
 	$password = $_POST["password"];
 	$passwd = encryptPassword($password);	
 	
-	$condition = "account = '" . mysql_real_escape_string( $account , $db ) . "' and ";
-	$condition .= "passwd = '" . mysql_real_escape_string( $passwd , $db ) . "' and ";
+	$condition = "account = '" . mysqli_real_escape_string( $db , $account ) . "' and ";
+	$condition .= "passwd = '" . mysqli_real_escape_string( $db , $passwd ) . "' and ";
 	$condition .= "paused_at is NULL and deleted_at is NULL"; 
 	
 	$fields = getFields($db);
 	
 	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
-	$res = mysql_query($sql,$db);
+	$res = mysqli_query($db, $sql);
 	if ($res) {
 		$results = getUserDataFromRes($res,$fields);
 	 	if (count($results) == 1) {
@@ -168,5 +180,93 @@ function loginAction() {
 	
 }
 
+function addError( $errors , $key , $error ) {
+	if (isset( $errors[$key] )) {
+		array_push( $errors[$key] , $error );
+	} else {
+		$errors[$key] = array( $error );
+	}
+	return $errors;
+}
+
+function signupAction() {
+	global $table;
+	global $user_signup_fields;
+	global $user_signup_validations;
+	
+	$db = db_open();
+
+	$userdata = $_POST["data"];
+	
+	$list = explode(",",$user_signup_fields);
+	$hash = array();
+	foreach ($list as $key) {
+		if (isset( $userdata[$key] ) ) {
+			if ($userdata[$key] == null) {
+				$hash[$key] = null;
+			} else {
+				$hash[$key]= $userdata[$key];
+			}
+		}
+	}
+
+	$errors = array();
+	foreach ($list as $key) {
+		if (isset($hash[$key])) {
+			$value = $hash[$key];
+		} else {
+			$value = null;
+		}
+		
+		if (isset( $user_signup_validations[$key] ) ) {
+			$validations = $user_signup_validations[$key];
+			foreach ($validations as $validation) {
+				if (is_string($validation)) {
+					if ($validation == "Required") {
+						if ($value == null || $value == "") {
+							$errors = addError( $errors , $key , array( 1000, "Required" ) ); 
+						}
+					} else if ($validation == "Unique") {
+						if ($value != null) {
+							$db = db_open();
+							$condition = mysqli_real_escape_string($db,$key) . " = " .  mysqli_real_escape_string( $db , $account );
+							$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
+							$res = mysqli_query($db,$sql);
+							if ($res) {
+								$results = getUserDataFromRes($res,$fields);
+								if (count($results)>0) {
+									$errors = addError( $errors , $key , array( 1002 , "Unique" ) );
+								}
+							}
+							db_close($db);
+						}
+					}
+				} else {
+					if ($validation[0] == "Length<=") {
+						$length = $validation[1];
+						if ($value != null && strlen( $value ) > $length ) {
+							$errors = addError( $errors , $key , array( "code"=>1001, "params" => array( $length ), "message" => "length is not less nor equals " . $length ) );
+						}
+					} else if ($validation[0] == "Length>=") {
+						$length = $validation[1];
+						if ($value != null && strlen( $value ) < $length ) {
+							$errors = addError( $errors , $key , array( "code"=>1002, "params" => array( $length ), "message" => "length is not greater nor equals " . $length ) );
+						}
+					}
+				}
+			}
+		}
+	}
+
+	$data = array( "status" => "OK" , "data" => "OK" );
+	
+	if (count($errors)>0) {
+		$data = array( "status" => "OK" ,
+			"data" => array( "result" => "validation_error" , "data" => $errors )
+		);
+	}
+	return $data;
+
+}
 
 ?>

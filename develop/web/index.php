@@ -8,7 +8,7 @@
     <script src="member_site.js"></script>
   </head>
   <body>
-  <?php require_once("member_site_action.php"); ?>
+  <?php require_once("member_site_core/action.php"); ?>
     <div id="login">
   <?php if (isLogined()): ?>
   	Logined : 
@@ -17,7 +17,9 @@
   	&nbsp;
   	<a href="edit.php">Edit</a>
   <?php else: ?>
-  	Logout
+  	Logouted :
+  	&nbsp;
+  	<a href="signup.php">Signup</a>
   <?php endif ?>
     </div>
     <div id="me"></div>

@@ -5,7 +5,7 @@
 
 //   $data = array( "status" => "OK" , 
 //                  "message" => "PHP Task is finished");
-require_once('member_site_core.php');
+require_once('core.php');
 
 if (realpath($_SERVER["SCRIPT_FILENAME"]) == realpath(__FILE__)) { // direct call
 

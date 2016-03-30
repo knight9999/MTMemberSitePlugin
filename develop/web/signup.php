@@ -21,27 +21,41 @@
   <?php endif ?>
     </div>
     <form>
-    	<label>Edit</label>
+    	<label>Signup</label>
+    	<dt>Account</dt>
+    	<dd>
+    		<input type="text" name="account">
+    	</dd>
+    	<dt>Password</dt>
+    	<dd>
+    		<input type="password" name="password">
+    	</dd>
+    	<dt>Password confirm</dt>
+    	<dd>
+    		<input type="password" name="password_confirm">
+    	</dd>
     	<dt>NickName</dt>
     	<dd>
-	    	<input type="text" name="nick_name" value="<?php echo me("nick_name"); ?>">
+	    	<input type="text" name="nick_name">
  		</dd>
  		<dt>email</dt>
  		<dd>
-	    	<input type="text" name="email" value="<?php echo me("email"); ?>">
+	    	<input type="text" name="email">
 	    </dd>
-    	<button onclick="edit(this); return false;">Edit</button>
+    	<button onclick="signup(this); return false;">Signup</button>
     </form>
     <script>
-		function edit(btn) {
+		function signup(btn) {
 			var form = btn.form;
+			var account = form["account"].value;
+			var password = form["password"].value;
 			var nick_name = form["nick_name"].value;
 			var email = form["email"].value;
-			memberSite.edit( { nick_name : nick_name , email : email } ,
-				function(data) { alert( "1:" + JSON.stringify(data) ); },
-				function(err) { alert( JSON.stringify(err) ); }
-			); 
-		}
+			memberSite.signup( { account : account , password : password, nick_name : nick_name , email : email } ,
+					function(data) { alert( "1:" + JSON.stringify(data) ); },
+					function(err) { alert( JSON.stringify(err) ); }
+				); 
+}
     </script>
   </body>
 </html>
