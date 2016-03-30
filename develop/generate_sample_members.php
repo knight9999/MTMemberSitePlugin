@@ -12,7 +12,7 @@
   			if ($value instanceof DateTime) {
   				$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
   			} else {
-  				$escapedValue = "'" . mysql_real_escape_string( $value , $db ) . "'";
+  				$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
   			}
   		}
   		array_push ( $escapedValuesList , $escapedValue );
@@ -22,7 +22,7 @@
   	$sql = "INSERT INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . "); ";
   	
 //  	print $sql . "\n";
-  	mysql_query($sql,$db);
+  	mysqli_query($db,$sql);
   		 
   }
 
@@ -41,8 +41,8 @@
   	);
   }
   
-  $db = mysql_connect( "localhost", "root" , "");
-  mysql_select_db( "mt_membersite");
+  $db = mysqli_connect( "localhost", "root" , "");
+  mysqli_select_db( $db, "mt_membersite" );
   
   $fieldsList = array( "account" , "nick_name" , "email" , "passwd" , "created_at" );
   
@@ -51,7 +51,7 @@
 	  insertData($db,$fieldsList,$member);
   }
   
-  mysql_close($db);
+  mysqli_close($db);
 
 
 

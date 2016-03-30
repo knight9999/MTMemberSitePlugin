@@ -50,7 +50,7 @@ function filterUserData($userData) {
 function getUserDataFromRes($res,$fields) {
 	$results = array();
 	if ($res) {
-		while ($row = mysql_fetch_assoc($res)) {
+		while ($row = mysqli_fetch_assoc($res)) {
 			reset($row);
 			$result = array();
 			foreach ($fields as $key => $type) {
