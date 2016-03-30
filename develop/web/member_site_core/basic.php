@@ -4,22 +4,22 @@
 
 function db_open() {
 	global  $database_server , $database_user , $database_password;
-	$db = mysql_connect( $database_server , $database_user , $database_password );
-	mysql_select_db( "mt_membersite",$db);
+	$db = mysqli_connect( $database_server , $database_user , $database_password );
+	mysqli_select_db( $db, "mt_membersite" );
 	return $db;
 }
 
 function db_close($db) {
-	mysql_close($db);
+	mysqli_close($db);
 }
 
 function getFields($db) {
 	global $table;
 	$sql = "SHOW COLUMNS FROM " . $table . ";";
-	$res = mysql_query($sql,$db);
+	$res = mysqli_query($db, $sql);
 	$list = array();
 	if ($res) {
-		while ($row = mysql_fetch_assoc($res)) {
+		while ($row = mysqli_fetch_assoc($res)) {
 			$list[$row['Field']] = $row['Type'];
 		}
 	}
@@ -50,7 +50,7 @@ function filterUserData($userData) {
 function getUserDataFromRes($res,$fields) {
 	$results = array();
 	if ($res) {
-		while ($row = mysql_fetch_assoc($res)) {
+		while ($row = mysqli_fetch_assoc($res)) {
 			reset($row);
 			$result = array();
 			foreach ($fields as $key => $type) {

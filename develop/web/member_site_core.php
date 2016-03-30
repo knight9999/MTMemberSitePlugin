@@ -78,7 +78,7 @@ function editAction() {
 				if ($_POST[$key] == null) {
 					$hash[$key] = "NULL";
 				} else {
-					$hash[$key]= mysql_real_escape_string( $_POST[$key] );
+					$hash[$key]= mysqli_real_escape_string( $db, $_POST[$key] );
 				}
 			}
 		}	
@@ -92,13 +92,13 @@ function editAction() {
 			array_push($setList , $key . "=" . $val );
 		}	
 		$sets = implode( ',' , $setList );
-		$id =  mysql_real_escape_string( $me['id'] );
+		$id =  mysqli_real_escape_string( $db, $me['id'] );
 		$sql = "UPDATE " . $table . " SET " . $sets . " WHERE ID = " . $id . ";";
 		//TODO Transaction
-		$res = mysql_query($sql,$db);
+		$res = mysqli_query($db,$sql);
 		if ($res) {
 			$sql = "SELECT * FROM " . $table . " WHERE ID = ". $id . ";";
-			$res = mysql_query($sql,$db);
+			$res = mysqli_query($db,$sql);
 			if ($res) {
 				$results = getUserDataFromRes($res,$fields);
  				session_start();
@@ -133,14 +133,14 @@ function loginAction() {
 	$password = $_POST["password"];
 	$passwd = encryptPassword($password);	
 	
-	$condition = "account = '" . mysql_real_escape_string( $account , $db ) . "' and ";
-	$condition .= "passwd = '" . mysql_real_escape_string( $passwd , $db ) . "' and ";
+	$condition = "account = '" . mysqli_real_escape_string( $db, $account ) . "' and ";
+	$condition .= "passwd = '" . mysqli_real_escape_string( $db, $passwd  ) . "' and ";
 	$condition .= "paused_at is NULL and deleted_at is NULL"; 
 	
 	$fields = getFields($db);
 	
 	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
-	$res = mysql_query($sql,$db);
+	$res = mysqli_query($db, $sql);
 	if ($res) {
 		$results = getUserDataFromRes($res,$fields);
 	 	if (count($results) == 1) {
