@@ -36,15 +36,16 @@
 
   function getMembers() {
   	return array(
-  		array( "member" , "Member" , "member@example.com" , encryptPassword("hogehoge") , new DateTime("2016/3/28 10:00:00") ),
-  		array( "taro" , "Taro" , "taro@example.com" , encryptPassword("tarotaro") , new DateTime("2016/3/28 11:00:00") )
+  		array( "member" , "Member" , "member@example.com" , encryptPassword("hogehoge") , new DateTime("2016/3/28 10:00:00") , new DateTime("2016/3/28 10:00:00") ),
+  		array( "taro" , "Taro" , "taro@example.com" , encryptPassword("tarotaro") , new DateTime("2016/3/28 11:00:00"), new DateTime("2016/3/28 11:00:00") ),
+  		array( "jiro" , "Jiro" , "jiro@example.com" , encryptPassword("jirojiro") , new DateTime("2016/3/28 11:00:00"), null )
   	);
   }
   
   $db = mysqli_connect( "localhost", "root" , "");
   mysqli_select_db( $db, "mt_membersite" );
   
-  $fieldsList = array( "account" , "nick_name" , "email" , "passwd" , "created_at" );
+  $fieldsList = array( "account" , "nick_name" , "email" , "passwd" , "created_at" , "activated_at" );
   
   $members = getMembers();
   foreach ($members as $member) {

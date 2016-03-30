@@ -8,12 +8,13 @@ $table = "membersite_members";
 $user_readable_fields = "account,nick_name,email,image";
 $user_updatable_fields = "account,nick_name,email,image";
 $user_signup_fields = "account,password,nick_name,email";
+$user_signup_without_mail = true;
 
 $user_signup_validations = array(
 	"account" => array( "Unique" , "Required" , array( "Length>=" , 4 ) , array( "Length<=" , 20 ) ),
 	"password" => array( "Required" , array( "Length>=" , 4) , array( "Length<=" , 20 ) ),
 	"nick_name" => array( "Required" , array( "Length>=" , 4) , array( "Length<=" , 20 )),
-	"email" => array( "EmailFormat" )
+	"email" => array( "Unique", "Required" , "EmailFormat" )
 );
 
 
@@ -147,6 +148,7 @@ function loginAction() {
 	
 	$condition = "account = '" . mysqli_real_escape_string( $db , $account ) . "' and ";
 	$condition .= "passwd = '" . mysqli_real_escape_string( $db , $passwd ) . "' and ";
+	$condition .= "activated_at IS NOT NULL AND ";
 	$condition .= "paused_at is NULL and deleted_at is NULL"; 
 	
 	$fields = getFields($db);
@@ -189,10 +191,11 @@ function addError( $errors , $key , $error ) {
 	return $errors;
 }
 
-function signupAction() {
+function signupAction() { // TODO バリデーションだけの処理を分離すべき
 	global $table;
 	global $user_signup_fields;
 	global $user_signup_validations;
+	global $user_signup_without_mail;
 	
 	$db = db_open();
 
@@ -224,20 +227,21 @@ function signupAction() {
 				if (is_string($validation)) {
 					if ($validation == "Required") {
 						if ($value == null || $value == "") {
-							$errors = addError( $errors , $key , array( 1000, "Required" ) ); 
+							$errors = addError( $errors , $key , array( "code"=>1000, "message" => "Required" ) ); 
 						}
 					} else if ($validation == "Unique") {
 						if ($value != null) {
 							$db = db_open();
 							// $keyのタイプがstringのときのみ、この処理 TODO 文字列以外に数値の場合の処理も実装する
-							$condition = mysqli_real_escape_string($db,$key) . " = '" .  mysqli_real_escape_string( $db , $value ) . "'";
+							$condition = mysqli_real_escape_string($db,$key) . " = '" .  mysqli_real_escape_string( $db , $value ) . "' AND ";
+							$condition .= " activated_at IS NOT NULL AND ";
+							$condition .= " paused_at is NULL and deleted_at is NULL AND "; 
 							$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
-//							error_log( $sql );
 							$res = mysqli_query($db,$sql);
 							if ($res) {
 								$results = getUserDataFromRes($res,$fields);
 								if (count($results)>0) {
-									$errors = addError( $errors , $key , array( 1002 , "Unique" ) );
+									$errors = addError( $errors , $key , array( "code"=>1003 , "message"=>"Unique" ) );
 								}
 							}
 							db_close($db);
@@ -247,12 +251,12 @@ function signupAction() {
 					if ($validation[0] == "Length<=") {
 						$length = $validation[1];
 						if ($value != null && strlen( $value ) > $length ) {
-							$errors = addError( $errors , $key , array( "code"=>1001, "params" => array( $length ), "message" => "length is not less nor equals " . $length ) );
+							$errors = addError( $errors , $key , array( "code"=>1001, "params" => array( $length ), "message" => "length<="  ) );
 						}
 					} else if ($validation[0] == "Length>=") {
 						$length = $validation[1];
 						if ($value != null && strlen( $value ) < $length ) {
-							$errors = addError( $errors , $key , array( "code"=>1002, "params" => array( $length ), "message" => "length is not greater nor equals " . $length ) );
+							$errors = addError( $errors , $key , array( "code"=>1002, "params" => array( $length ), "message" => "length>="  ) );
 						}
 					}
 				}
@@ -260,12 +264,52 @@ function signupAction() {
 		}
 	}
 
-	$data = array( "status" => "OK" , "data" => "OK" );
-	
 	if (count($errors)>0) {
 		$data = array( "status" => "OK" ,
 			"data" => array( "result" => "validation_error" , "data" => $errors )
 		);
+	} else {
+		if ($user_signup_without_mail) {
+			$db = db_open();
+			$escapedFieldsList = array();
+			$escapedValuesList = array();
+			$hash["created_at"] = new DateTime();
+			$hash["activated_at"] = new DateTime();
+			
+			$password = $hash["password"];
+			unset( $hash["password"] );
+			$passwd = encryptPassword($password);
+			$hash["passwd"] = $passwd;
+			
+			foreach( $hash as $key => $value) {
+				$escapedField = mysqli_real_escape_string( $db , $key );
+  				if (is_null($value)) {
+  					$escapedValue = "NULL";
+  				} else {
+  					if ($value instanceof DateTime) {
+  						$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
+  					} else {
+  						$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
+  					}
+  				}
+  				array_push( $escapedFieldsList , $escapedField );
+  				array_push( $escapedValuesList , $escapedValue );
+  			}
+  			$fields = implode ( "," , $escapedFieldsList );
+  			$values = implode( "," , $escapedValuesList );
+  			$sql = "INSERT INTO " . $table . " (" . $fields . ") VALUES (" . $values . "); ";
+  			$res = mysqli_query($db,$sql);
+  			if ($res) {
+  				$data = array( "status" => "OK" ,
+  						"result" => "OK" );
+  			} else {
+  				$data = array( "status" => "ERROR" ,
+  						"code" => 101,
+  						"message" => "Insert data failed" );
+  			}
+  			db_close($db);
+	  	}
+  	
 	}
 	return $data;
 
