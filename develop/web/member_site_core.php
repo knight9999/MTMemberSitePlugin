@@ -8,93 +8,9 @@ $table = "membersite_members";
 $user_readable_fields = "account,nick_name,email,image";
 $user_updatable_fields = "account,nick_name,email,image";
 
+require_once('member_site_core/basic.php');
+require_once('member_site_core/lib.php');
 
-// Basic
-
-function db_open() {
-	global  $database_server , $database_user , $database_password;
-	$db = mysql_connect( $database_server , $database_user , $database_password );
-	mysql_select_db( "mt_membersite",$db);
-	return $db;
-}
-
-function db_close($db) {
-	mysql_close($db);
-}
-
-function getFields($db) {
-	global $table;
-	$sql = "SHOW COLUMNS FROM " . $table . ";";
-	$res = mysql_query($sql,$db);
-	$list = array();
-	if ($res) {
-		while ($row = mysql_fetch_assoc($res)) {
-			$list[$row['Field']] = $row['Type'];
-		}
-	}
-	return $list;
-}
-
-
-function encryptPassword($password) {
-	$pwKey = "PASSKEY";
-	$pass1 = sha1($password);
-	$passw = $pwKey . $pass1 . $pwKey;
-	$passwd = sha1($passw);
-	return $passwd;
-}
-
-function filterUserData($userData) {
-	global $user_readable_fields;
-	$result = array();
-	$hash = explode(",",$user_readable_fields);
-	foreach( $hash as $key) {
-		if (isset( $userData[$key]) ) {
-			$result[$key] = $userData[$key];
-		}
-	}
-	return $result;
-}
-
-// PHP Lib
-
-function isLogined() {
-	$me = me();
-	if ($me) { 
-		return true; 
-	}
-	return false;
-}
-
-function me($key = null) {
-	session_start();
-	if (isset($_SESSION['me'])) {
-		$me = $_SESSION["me"];
-	} else {
-		$me = null;
-	}
-	session_write_close();
-	if ($key != null) {
-		return $me[$key];
-	}
-	return $me;
-}
-
-function getUserDataFromRes($res,$fields) {
-	$results = array();
-	if ($res) {
-		while ($row = mysql_fetch_assoc($res)) {
-			reset($row);
-			$result = array();
-			foreach ($fields as $key => $type) {
-				$value = $row[$key];
-				$result[$key] = $value;
-			}
-			array_push( $results , $result );
-		}
-	}
-	return $results;
-}
 
 // JavaScript API
 
