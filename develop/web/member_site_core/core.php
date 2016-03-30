@@ -90,11 +90,7 @@ function editAction() {
 				if ($userdata[$key] == null) {
 					$hash[$key] = "NULL";
 				} else {
-<<<<<<< HEAD:develop/web/member_site_core/core.php
 					$hash[$key]= mysqli_real_escape_string( $db , $userdata[$key] );
-=======
-					$hash[$key]= mysqli_real_escape_string( $db, $_POST[$key] );
->>>>>>> fe7d5bc95ce5adb0808265a8d3a949e5228c2374:develop/web/member_site_core.php
 				}
 			}
 		}	
@@ -111,17 +107,10 @@ function editAction() {
 		$id =  mysqli_real_escape_string( $db, $me['id'] );
 		$sql = "UPDATE " . $table . " SET " . $sets . " WHERE ID = " . $id . ";";
 		//TODO Transaction
-<<<<<<< HEAD:develop/web/member_site_core/core.php
 		$res = mysqli_query($db, $sql);
 		if ($res) {
 			$sql = "SELECT * FROM " . $table . " WHERE ID = ". $id . ";";
 			$res = mysqli_query($db, $sql);
-=======
-		$res = mysqli_query($db,$sql);
-		if ($res) {
-			$sql = "SELECT * FROM " . $table . " WHERE ID = ". $id . ";";
-			$res = mysqli_query($db,$sql);
->>>>>>> fe7d5bc95ce5adb0808265a8d3a949e5228c2374:develop/web/member_site_core.php
 			if ($res) {
 				$results = getUserDataFromRes($res,$fields);
  				session_start();
@@ -156,13 +145,8 @@ function loginAction() {
 	$password = $_POST["password"];
 	$passwd = encryptPassword($password);	
 	
-<<<<<<< HEAD:develop/web/member_site_core/core.php
 	$condition = "account = '" . mysqli_real_escape_string( $db , $account ) . "' and ";
 	$condition .= "passwd = '" . mysqli_real_escape_string( $db , $passwd ) . "' and ";
-=======
-	$condition = "account = '" . mysqli_real_escape_string( $db, $account ) . "' and ";
-	$condition .= "passwd = '" . mysqli_real_escape_string( $db, $passwd  ) . "' and ";
->>>>>>> fe7d5bc95ce5adb0808265a8d3a949e5228c2374:develop/web/member_site_core.php
 	$condition .= "paused_at is NULL and deleted_at is NULL"; 
 	
 	$fields = getFields($db);
@@ -245,8 +229,10 @@ function signupAction() {
 					} else if ($validation == "Unique") {
 						if ($value != null) {
 							$db = db_open();
-							$condition = mysqli_real_escape_string($db,$key) . " = " .  mysqli_real_escape_string( $db , $account );
+							// $keyのタイプがstringのときのみ、この処理 TODO 文字列以外に数値の場合の処理も実装する
+							$condition = mysqli_real_escape_string($db,$key) . " = '" .  mysqli_real_escape_string( $db , $value ) . "'";
 							$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
+//							error_log( $sql );
 							$res = mysqli_query($db,$sql);
 							if ($res) {
 								$results = getUserDataFromRes($res,$fields);
