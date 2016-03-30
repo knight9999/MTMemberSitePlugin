@@ -8,7 +8,8 @@ $table = "membersite_members";
 $user_readable_fields = "account,nick_name,email,image";
 $user_updatable_fields = "account,nick_name,email,image";
 $user_signup_fields = "account,password,nick_name,email";
-$user_signup_without_mail = true;
+$user_signup_without_mail = false;
+$mail_from = "knaito@asial.co.jp";
 
 $user_signup_validations = array(
 	"account" => array( "Unique" , "Required" , array( "Length>=" , 4 ) , array( "Length<=" , 20 ) ),
@@ -269,50 +270,61 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 			"data" => array( "result" => "validation_error" , "data" => $errors )
 		);
 	} else {
+		$db = db_open();
+		$escapedFieldsList = array();
+		$escapedValuesList = array();
+		$hash["created_at"] = new DateTime();
+		
 		if ($user_signup_without_mail) {
-			$db = db_open();
-			$escapedFieldsList = array();
-			$escapedValuesList = array();
-			$hash["created_at"] = new DateTime();
 			$hash["activated_at"] = new DateTime();
-			
-			$password = $hash["password"];
-			unset( $hash["password"] );
-			$passwd = encryptPassword($password);
-			$hash["passwd"] = $passwd;
-			
-			foreach( $hash as $key => $value) {
-				$escapedField = mysqli_real_escape_string( $db , $key );
-  				if (is_null($value)) {
-  					$escapedValue = "NULL";
-  				} else {
-  					if ($value instanceof DateTime) {
-  						$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
-  					} else {
-  						$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
-  					}
-  				}
-  				array_push( $escapedFieldsList , $escapedField );
-  				array_push( $escapedValuesList , $escapedValue );
-  			}
-  			$fields = implode ( "," , $escapedFieldsList );
-  			$values = implode( "," , $escapedValuesList );
-  			$sql = "INSERT INTO " . $table . " (" . $fields . ") VALUES (" . $values . "); ";
-  			$res = mysqli_query($db,$sql);
-  			if ($res) {
-  				$data = array( "status" => "OK" ,
-  						"result" => "OK" );
+		} else {
+			$hash["confirm_key"] = sha1( rand(1,1000000) );
+		}
+		$password = $hash["password"];
+		unset( $hash["password"] );
+		$passwd = encryptPassword($password);
+		$hash["passwd"] = $passwd;
+		
+		foreach( $hash as $key => $value) {
+			$escapedField = mysqli_real_escape_string( $db , $key );
+  			if (is_null($value)) {
+  				$escapedValue = "NULL";
   			} else {
-  				$data = array( "status" => "ERROR" ,
-  						"code" => 101,
-  						"message" => "Insert data failed" );
+  				if ($value instanceof DateTime) {
+  					$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
+  				} else {
+  					$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
+  				}
   			}
-  			db_close($db);
-	  	}
+  			array_push( $escapedFieldsList , $escapedField );
+  			array_push( $escapedValuesList , $escapedValue );
+  		}
+  		$fields = implode( "," , $escapedFieldsList );
+  		$values = implode( "," , $escapedValuesList );
+  		$sql = "INSERT INTO " . $table . " (" . $fields . ") VALUES (" . $values . "); ";
+  		$res = mysqli_query($db,$sql);
+  		if ($res) {
+  			mailTo($hash);
+  			$data = array( "status" => "OK" ,
+  					"result" => "OK" );
+  		} else {
+  			$data = array( "status" => "ERROR" ,
+  					"code" => 101,
+  					"message" => "Insert data failed" );
+  		}
+  		db_close($db);
   	
 	}
 	return $data;
 
+}
+
+function mailTo($hash) {
+	global $mail_from;
+	error_log( $hash['email'] );
+	error_log( $hash['confirm_key'] );
+	mb_send_mail($hash['email'],'test mail' , "This is a test \n You confirm key = " . $hash['confirm_key'], "From: ". $mail_from );
+	
 }
 
 ?>
