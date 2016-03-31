@@ -20,6 +20,11 @@
   	Logouted :
   	&nbsp;
   	<a href="signup.php">Signup</a>
+  	<form>
+  		<label>Reminder</label>
+  		<input type="text" name="email">
+  		<button onclick="reminder(this); return false;">Reminder</button>
+  	</form>
   <?php endif ?>
     </div>
     <div id="me"></div>
@@ -63,6 +68,15 @@
       function logout() {
 	    memberSite.logout( "", "");
       }          
+
+      function reminder(btn) {
+          var form = btn.form;
+          var email = form["email"].value;
+          memberSite.reminder(email,
+                  function(data) { alert( JSON.stringify(data) ); },
+                  function(err) { alert( JSON.stringify(err) ); }
+          );
+      }
     </script>
   </body>
 </html>

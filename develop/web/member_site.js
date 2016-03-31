@@ -130,7 +130,51 @@ MemberSite.prototype.signup = function(userData, success, failure) {
 	});
 };
 
+MemberSite.prototype.reminder = function(email, success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	var data = { action : "reminder" , email : email };
+	this.ajax_post({ 
+		url : this.apiUrl( "action.php" ),
+		data: data ,
+		success : function(data) {
+//			console.log( JSON.stringify( data ) );
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = data.data;
+				success( data.data );
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
+};
 
+MemberSite.prototype.repassword = function(data, success, failure) {
+	success = this.guard(success);
+	failure = this.guard(failure);
+	var self = this;
+	var data = { action : "repassword" , password : data["password"] , key : data["key"] };
+	this.ajax_post({ 
+		url : this.apiUrl( "action.php" ),
+		data: data ,
+		success : function(data) {
+//			console.log( JSON.stringify( data ) );
+			if (data.status == "ERROR") {
+				failure( data );
+			} else {
+				self.me = data.data;
+				success( data.data );
+			}
+		},
+		failure : function(err) {
+			failure( { code : 100 , message : err } );
+		}
+	});
+};
 
 
 window.memberSite = new MemberSite();

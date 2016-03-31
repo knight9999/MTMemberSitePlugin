@@ -37,7 +37,15 @@ function dispatchAction() {
 		return editAction();
 	} else if ($action == "signup") {
 		return signupAction();
+	} else if ($action == "reminder") {
+		return reminderAction();
+	} else if ($action == "repassword") {
+		return repasswordAction();
 	}
+	$data = array( "status" => "ERROR",
+			"code" => 110,
+			"message" => "No such action");
+	return $data;
 }
 
 
@@ -95,7 +103,7 @@ function editAction() {
 					$hash[$key]= mysqli_real_escape_string( $db , $userdata[$key] );
 				}
 			}
-		}	
+		}	//TODO バリデーション
 		$setList = array();
 		foreach( $hash as $key => $_val ) {
 			if ($fields[$key] == "text") {
@@ -190,6 +198,109 @@ function addError( $errors , $key , $error ) {
 		$errors[$key] = array( $error );
 	}
 	return $errors;
+}
+
+function reminderAction() {
+	global $table;
+	$email = $_POST["email"];
+	
+	$db = db_open();
+	$fields = getFields($db);
+	
+	$condition = " email = '" .  mysqli_real_escape_string( $db , $email ) . "' AND ";
+	$condition .= " activated_at IS NOT NULL AND ";
+	$condition .= " paused_at is NULL and deleted_at is NULL ";
+	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
+	$res = mysqli_query($db,$sql);
+	if ($res) {
+		$results = getUserDataFromRes($res,$fields);
+		if (count($results)>0) {
+			$confirm_key = sha1( rand(1,1000000) );
+			$sets = "confirm_key = '" . mysqli_real_escape_string( $db , $confirm_key ) . "'"; 
+			$sql = "UPDATE " . $table . " SET " . $sets . " WHERE email = '" . mysqli_real_escape_string( $db , $email ) . "';";
+			$res = mysqli_query($db, $sql); // これはかなり危険。やはり、テーブルけ分けるべき。
+			if ($res) {
+				$hash = array();
+				$hash['email'] = $email;
+  				$hash["title"] = "Reminder Mail";
+				$text = <<<EOT
+  	This is a test \n You confirm key = $confirm_key .
+	<a href="http://mt101.local/web/reminder.php?key=$confirm_key">Reminder</a>
+EOT;
+				$hash["text"] = $text;
+					
+				mailTo($hash);
+				$data = array( "status" => "OK" ,
+						"result" => "OK" ,
+						"data" => array( )
+				);
+				
+			} else {
+				$data = array( "status" => "ERROR" ,
+						"code" => 104,
+						"message" => "No user data" );
+			}
+		} else {
+			$data = array( "status" => "ERROR" ,
+					"code" => 104,
+					"message" => "No user data" );
+		}
+	} else {
+		$data = array( "status" => "ERROR" ,
+				"code" => 104,
+				"message" => "No user data" );
+	}
+	db_close($db);
+	
+	return $data;
+}
+
+function repasswordAction() {
+	global $table;
+	$confirm_key = $_POST["key"];
+	$password = $_POST["password"];
+	$db = db_open();
+	$fields = getFields($db);
+	
+	$condition = " confirm_key = '" .  mysqli_real_escape_string( $db , $confirm_key ) . "' AND ";
+	$condition .= " activated_at IS NOT NULL AND ";
+	$condition .= " paused_at is NULL and deleted_at is NULL ";
+	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
+	$res = mysqli_query($db,$sql);
+	if ($res) {
+		$results = getUserDataFromRes($res,$fields);
+		if (count($results)>0) {
+			$me = $results[0];
+			$id = $me["id"];
+			$passwd = encryptPassword($password);
+				
+			$sets = "passwd = '" . mysqli_real_escape_string( $db , $passwd ) . "' , confirm_key = NULL";
+			$sql = "UPDATE " . $table . " SET " . $sets . " WHERE id = " . $id . ";";
+			$res = mysqli_query($db, $sql);
+			if ($res) {
+				$data = array( "status" => "OK" ,
+						"result" => "OK" ,
+						"data" => array( )
+				);
+				
+			} else {
+				$data = array( "status" => "ERROR" ,
+						"code" => 104,
+						"message" => "No user data" );
+			}
+		} else {
+			$data = array( "status" => "ERROR" ,
+				"code" => 104,
+				"message" => "No user data" );
+		}
+	} else {
+		$data = array( "status" => "ERROR" ,
+				"code" => 104,
+				"message" => "No user data" );
+	}
+	db_close($db);
+	
+	return $data;
 }
 
 function signupAction() { // TODO バリデーションだけの処理を分離すべき
@@ -306,6 +417,14 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
   		$sql = "INSERT INTO " . $table . " (" . $fields . ") VALUES (" . $values . "); ";
   		$res = mysqli_query($db,$sql);
   		if ($res) {
+			$confirm_key = $hash['confirm_key'];
+  			$text = <<<EOT
+  	This is a test \n You confirm key = $confirm_key .
+	<a href="http://mt101.local/web/activate.php?key=$confirm_key">Activate</a>
+EOT;
+  			$hash["title"] = "Activation Mail";
+  			$hash["text"] = $text;
+  			
   			mailTo($hash);
   			$data = array( "status" => "OK" ,
   					"result" => "OK" ,
@@ -325,13 +444,10 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 
 function mailTo($hash) {
 	global $mail_from;
-	$confirm_key = $hash['confirm_key'];
+	$title = $hash["title"];
+	$text = $hash["text"];
 	
-	$text = <<<EOT
-	<a href="http://mt101.local/web/activate.php?key=$confirm_key">Activate</a>
-EOT;
-	
-	mb_send_mail($hash['email'],'test mail' , "This is a test \n You confirm key = " . $confirm_key . "\n" . $text , "From: ". $mail_from );
+	mb_send_mail($hash['email'], $title , $text , "From: ". $mail_from );
 	
 }
 

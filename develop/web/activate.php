@@ -1,4 +1,6 @@
 <?php 
+// こういう風にPHPで直接実行するほか、Ajax経由のバージョンも作成する
+// むしろ、Ajax経由のみで良い？
 	require_once("member_site_core/action.php");
 	$confirm_key = $_GET['key'];
     $result = search_confirm_key( $confirm_key );

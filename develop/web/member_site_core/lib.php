@@ -55,7 +55,7 @@ function activate_by_confirm_key($key) {
 		$me = $result["data"];
 		$db = db_open();
 		$activatedAt = new DateTime();
-		$sets = "activated_at = '" . $activatedAt->format("Y-m-d H:i:s") . "'";
+		$sets = "activated_at = '" . $activatedAt->format("Y-m-d H:i:s") . "' , confirm_key = NULL";
 		$id = $me["id"];
 		$sql = "UPDATE " . $table . " SET " . $sets . " WHERE ID = " . $id . ";";
 		$res = mysqli_query($db, $sql);
