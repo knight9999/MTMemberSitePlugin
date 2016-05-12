@@ -6,8 +6,8 @@ create table membersite_members (
   nick_name text,
   email text,
   passwd text,
-  confirm_key text,
-  confirm_code text,
+#  confirm_key text,
+#  confirm_code text,
   image text,
   last_login_at datetime,
   created_at datetime,
@@ -18,3 +18,16 @@ create table membersite_members (
   index(id)
 ) engine=InnoDB;
 
+
+create table membersite_keys (
+  id SERIAL,
+  member_id bigint,
+  key_type integer,
+  key_code text,
+  second_code text,
+  created_at datetime,
+  deleted_at datetime,
+  index(id)
+) engine=InnoDB;
+
+/* 1: signup  2: change mail address */

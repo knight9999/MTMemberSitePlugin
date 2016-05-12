@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 // Basic
 
@@ -13,8 +13,7 @@ function db_close($db) {
 	mysqli_close($db);
 }
 
-function getFields($db) {
-	global $table;
+function getFields($db,$table) {
 	$sql = "SHOW COLUMNS FROM " . $table . ";";
 	$res = mysqli_query($db, $sql);
 	$list = array();
@@ -25,7 +24,6 @@ function getFields($db) {
 	}
 	return $list;
 }
-
 
 function encryptPassword($password) {
 	$pwKey = "PASSKEY";
@@ -47,7 +45,7 @@ function filterUserData($userData) {
 	return $result;
 }
 
-function getUserDataFromRes($res,$fields) {
+function getDataFromRes($res,$fields) {
 	$results = array();
 	if ($res) {
 		while ($row = mysqli_fetch_assoc($res)) {

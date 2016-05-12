@@ -1,10 +1,11 @@
-<?php 
+<?php
 
 $database_server = "localhost";
 $database_user = "root";
 $database_password = "";
 $database_name="mt_membersite";
 $table = "membersite_members";
+$table_keys = "membersite_keys";
 $user_readable_fields = "account,nick_name,email,image";
 $user_updatable_fields = "account,nick_name,email,image";
 $user_signup_fields = "account,password,nick_name,email";
@@ -51,7 +52,7 @@ function dispatchAction() {
 
 function meAction() {
 	$me = me();
-		
+
 	if ($me) {
 		$data = array( "status" => "OK" ,
 			"message" => "PHP Task is finished",
@@ -60,7 +61,7 @@ function meAction() {
 		$data = array( "status" => "ERROR" ,
 				"code" => 101,
 				"message" => "There is no user data or multiple data" );
-		
+
 	}
 	return $data;
 }
@@ -84,14 +85,14 @@ function logoutAction() {
 function editAction() {
 	global $table;
 	global $user_updatable_fields;
-	
+
 	$me = me();
-	
-	if ($me) {	
+
+	if ($me) {
 		$db = db_open();
-	
+
 		$fields = getFields($db);
-		
+
 		$userdata = $_POST["data"];
 		$list = explode(",",$user_updatable_fields);
 		$hash = array();
@@ -112,7 +113,7 @@ function editAction() {
 				$val = $_val;
 			}
 			array_push($setList , $key . "=" . $val );
-		}	
+		}
 		$sets = implode( ',' , $setList );
 		$id =  mysqli_real_escape_string( $db, $me['id'] );
 		$sql = "UPDATE " . $table . " SET " . $sets . " WHERE ID = " . $id . ";";
@@ -122,7 +123,7 @@ function editAction() {
 			$sql = "SELECT * FROM " . $table . " WHERE ID = ". $id . ";";
 			$res = mysqli_query($db, $sql);
 			if ($res) {
-				$results = getUserDataFromRes($res,$fields);
+				$results = getDataFromRes($res,$fields);
  				session_start();
  				$_SESSION["me"] = $results[0];
  				session_write_close();
@@ -136,7 +137,7 @@ function editAction() {
 			$data = array( "status" => "ERROR",
 					"code" => 103,
 					"message" => "you are not logined");
-		}	
+		}
 		db_close($db);
 	} else {
 		$data = array( "status" => "ERROR",
@@ -148,29 +149,29 @@ function editAction() {
 
 function loginAction() {
 	global $table;
-	
+
 	$db = db_open();
-	
+
 	$account = $_POST["account"];
 	$password = $_POST["password"];
-	$passwd = encryptPassword($password);	
-	
+	$passwd = encryptPassword($password);
+
 	$condition = "account = '" . mysqli_real_escape_string( $db , $account ) . "' and ";
 	$condition .= "passwd = '" . mysqli_real_escape_string( $db , $passwd ) . "' and ";
 	$condition .= "activated_at IS NOT NULL AND ";
-	$condition .= "paused_at is NULL and deleted_at is NULL"; 
-	
+	$condition .= "paused_at is NULL and deleted_at is NULL";
+
 	$fields = getFields($db);
-	
+
 	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
 	$res = mysqli_query($db, $sql);
 	if ($res) {
-		$results = getUserDataFromRes($res,$fields);
+		$results = getDataFromRes($res,$fields);
 	 	if (count($results) == 1) {
  			session_start();
  			$_SESSION["me"] = $results[0];
  			session_write_close();
-		
+
 			$data = array( "status" => "OK" ,
 				"message" => "PHP Task is finished",
 		    	"data" => filterUserData( $results[0] ) );
@@ -178,7 +179,7 @@ function loginAction() {
  			$data = array( "status" => "ERROR" ,
  				"code" => 101,
  				"message" => "There is no user data or multiple data" );
-		
+
  		}
 	} else {
 		$data = array( "status" => "ERROR" ,
@@ -186,9 +187,9 @@ function loginAction() {
 				"message" => "There is no user data or multiple data" );
 	}
 	db_close($db);
-	
+
 	return $data;
-	
+
 }
 
 function addError( $errors , $key , $error ) {
@@ -203,20 +204,20 @@ function addError( $errors , $key , $error ) {
 function reminderAction() {
 	global $table;
 	$email = $_POST["email"];
-	
+
 	$db = db_open();
 	$fields = getFields($db);
-	
+
 	$condition = " email = '" .  mysqli_real_escape_string( $db , $email ) . "' AND ";
 	$condition .= " activated_at IS NOT NULL AND ";
 	$condition .= " paused_at is NULL and deleted_at is NULL ";
 	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
 	$res = mysqli_query($db,$sql);
 	if ($res) {
-		$results = getUserDataFromRes($res,$fields);
+		$results = getDataFromRes($res,$fields);
 		if (count($results)>0) {
 			$confirm_key = sha1( rand(1,1000000) );
-			$sets = "confirm_key = '" . mysqli_real_escape_string( $db , $confirm_key ) . "'"; 
+			$sets = "confirm_key = '" . mysqli_real_escape_string( $db , $confirm_key ) . "'";
 			$sql = "UPDATE " . $table . " SET " . $sets . " WHERE email = '" . mysqli_real_escape_string( $db , $email ) . "';";
 			$res = mysqli_query($db, $sql); // これはかなり危険。やはり、テーブルけ分けるべき。
 			if ($res) {
@@ -228,13 +229,13 @@ function reminderAction() {
 	<a href="http://mt101.local/web/reminder.php?key=$confirm_key">Reminder</a>
 EOT;
 				$hash["text"] = $text;
-					
+
 				mailTo($hash);
 				$data = array( "status" => "OK" ,
 						"result" => "OK" ,
 						"data" => array( )
 				);
-				
+
 			} else {
 				$data = array( "status" => "ERROR" ,
 						"code" => 104,
@@ -251,7 +252,7 @@ EOT;
 				"message" => "No user data" );
 	}
 	db_close($db);
-	
+
 	return $data;
 }
 
@@ -261,19 +262,19 @@ function repasswordAction() {
 	$password = $_POST["password"];
 	$db = db_open();
 	$fields = getFields($db);
-	
+
 	$condition = " confirm_key = '" .  mysqli_real_escape_string( $db , $confirm_key ) . "' AND ";
 	$condition .= " activated_at IS NOT NULL AND ";
 	$condition .= " paused_at is NULL and deleted_at is NULL ";
 	$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
 	$res = mysqli_query($db,$sql);
 	if ($res) {
-		$results = getUserDataFromRes($res,$fields);
+		$results = getDataFromRes($res,$fields);
 		if (count($results)>0) {
 			$me = $results[0];
 			$id = $me["id"];
 			$passwd = encryptPassword($password);
-				
+
 			$sets = "passwd = '" . mysqli_real_escape_string( $db , $passwd ) . "' , confirm_key = NULL";
 			$sql = "UPDATE " . $table . " SET " . $sets . " WHERE id = " . $id . ";";
 			$res = mysqli_query($db, $sql);
@@ -282,7 +283,7 @@ function repasswordAction() {
 						"result" => "OK" ,
 						"data" => array( )
 				);
-				
+
 			} else {
 				$data = array( "status" => "ERROR" ,
 						"code" => 104,
@@ -299,20 +300,21 @@ function repasswordAction() {
 				"message" => "No user data" );
 	}
 	db_close($db);
-	
+
 	return $data;
 }
 
 function signupAction() { // TODO バリデーションだけの処理を分離すべき
 	global $table;
+	global $table_keys;
 	global $user_signup_fields;
 	global $user_signup_validations;
 	global $user_signup_without_mail;
-	
+
 	$db = db_open();
 
 	$userdata = $_POST["data"];
-	
+
 	$list = explode(",",$user_signup_fields);
 	$hash = array();
 	foreach ($list as $key) {
@@ -332,28 +334,28 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 		} else {
 			$value = null;
 		}
-		
+
 		if (isset( $user_signup_validations[$key] ) ) {
 			$validations = $user_signup_validations[$key];
 			foreach ($validations as $validation) {
 				if (is_string($validation)) {
 					if ($validation == "Required") {
 						if ($value == null || $value == "") {
-							$errors = addError( $errors , $key , array( "code"=>1000, "message" => "Required" ) ); 
+							$errors = addError( $errors , $key , array( "code"=>1000, "message" => "Required" ) );
 						}
 					} else if ($validation == "Unique") {
 						if ($value != null) {
 							$db = db_open();
-							$fields = getFields($db);
-								
+							$fields = getFields($db,$table);
+
 							// $keyのタイプがstringのときのみ、この処理 TODO 文字列以外に数値の場合の処理も実装する
 							$condition = mysqli_real_escape_string($db,$key) . " = '" .  mysqli_real_escape_string( $db , $value ) . "' AND ";
 							$condition .= " activated_at IS NOT NULL AND ";
-							$condition .= " paused_at is NULL and deleted_at is NULL "; 
+							$condition .= " paused_at is NULL and deleted_at is NULL ";
 							$sql = "SELECT * FROM " . $table . " WHERE ".$condition . ";";
 							$res = mysqli_query($db,$sql);
 							if ($res) {
-								$results = getUserDataFromRes($res,$fields);
+								$results = getDataFromRes($res,$fields);
 								if (count($results)>0) {
 									$errors = addError( $errors , $key , array( "code"=>1003 , "message"=>"Unique" ) );
 								}
@@ -387,56 +389,90 @@ function signupAction() { // TODO バリデーションだけの処理を分離�
 		$escapedFieldsList = array();
 		$escapedValuesList = array();
 		$hash["created_at"] = new DateTime();
-		
+
 		if ($user_signup_without_mail) {
 			$hash["activated_at"] = new DateTime();
 		} else {
-			$hash["confirm_key"] = sha1( rand(1,1000000) );
+//			$hash["confirm_key"] = sha1( rand(1,1000000) );
 		}
 		$password = $hash["password"];
 		unset( $hash["password"] );
 		$passwd = encryptPassword($password);
 		$hash["passwd"] = $passwd;
-		
+
 		foreach( $hash as $key => $value) {
 			$escapedField = mysqli_real_escape_string( $db , $key );
-  			if (is_null($value)) {
-  				$escapedValue = "NULL";
+  	  if (is_null($value)) {
+  			$escapedValue = "NULL";
+  		} else {
+  			if ($value instanceof DateTime) {
+  				$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
   			} else {
-  				if ($value instanceof DateTime) {
-  					$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
-  				} else {
-  					$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
-  				}
+  				$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
   			}
-  			array_push( $escapedFieldsList , $escapedField );
-  			array_push( $escapedValuesList , $escapedValue );
   		}
-  		$fields = implode( "," , $escapedFieldsList );
-  		$values = implode( "," , $escapedValuesList );
-  		$sql = "INSERT INTO " . $table . " (" . $fields . ") VALUES (" . $values . "); ";
-  		$res = mysqli_query($db,$sql);
-  		if ($res) {
-			$confirm_key = $hash['confirm_key'];
-  			$text = <<<EOT
-  	This is a test \n You confirm key = $confirm_key .
+  		array_push( $escapedFieldsList , $escapedField );
+  		array_push( $escapedValuesList , $escapedValue );
+  	}
+  	$fields = implode( "," , $escapedFieldsList );
+  	$values = implode( "," , $escapedValuesList );
+  	$sql = "INSERT INTO " . $table . " (" . $fields . ") VALUES (" . $values . "); ";
+  	$res = mysqli_query($db,$sql);
+  	if ($res) {
+			$escapedFieldsList = array();
+			$escapedValuesList = array();
+			$hash_key = array();
+			$hash_key["member_id"] = mysqli_insert_id($db);
+			$hash_key["created_at"] = $hash["created_at"];
+			$hash_key["key_type"] = 1;
+			$hash_key["key_code"] = sha1( rand(1,1000000) );
+			foreach( $hash_key as $key => $value) {
+				$escapedField = mysqli_real_escape_string( $db , $key );
+	  	  if (is_null($value)) {
+	  			$escapedValue = "NULL";
+	  		} else {
+	  			if ($value instanceof DateTime) {
+	  				$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
+	  			} else if (is_string($value)){
+	  				$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
+	  			} else {
+						$escapedValue = $value;
+					}
+	  		}
+	  		array_push( $escapedFieldsList , $escapedField );
+	  		array_push( $escapedValuesList , $escapedValue );
+	  	}
+			$fields = implode( "," , $escapedFieldsList );
+	  	$values = implode( "," , $escapedValuesList );
+
+	  	$sql = "INSERT INTO " . $table_keys . " (" . $fields . ") VALUES (" . $values . "); ";
+	  	$res = mysqli_query($db,$sql);
+      if ($res) {
+  			$confirm_key = $hash_key['key_code'];
+     		$text = <<<EOT
+   	This is a test \n You confirm key = $confirm_key .
 	<a href="http://mt101.local/web/activate.php?key=$confirm_key">Activate</a>
 EOT;
   			$hash["title"] = "Activation Mail";
   			$hash["text"] = $text;
-  			
+        $hash["confirm_key"] = $confirm_key;
   			mailTo($hash);
   			$data = array( "status" => "OK" ,
   					"result" => "OK" ,
   					"data" => array( )
   					);
-  		} else {
-  			$data = array( "status" => "ERROR" ,
-  					"code" => 101,
-  					"message" => "Insert data failed" );
-  		}
-  		db_close($db);
-  	
+			} else {
+				$data = array( "status" => "ERROR" ,
+	  				"code" => 101,
+	  				"message" => "Insert data failed" );
+			}
+  	} else {
+  		$data = array( "status" => "ERROR" ,
+  				"code" => 101,
+  				"message" => "Insert data failed" );
+  	}
+  	db_close($db);
+
 	}
 	return $data;
 
@@ -446,9 +482,9 @@ function mailTo($hash) {
 	global $mail_from;
 	$title = $hash["title"];
 	$text = $hash["text"];
-	
+
 	mb_send_mail($hash['email'], $title , $text , "From: ". $mail_from );
-	
+
 }
 
 ?>
