@@ -1,5 +1,9 @@
 <?php
 
+class NotNull {
+
+};
+
 // Basic
 
 function db_open() {
@@ -59,6 +63,30 @@ function getDataFromRes($res,$fields) {
 		}
 	}
 	return $results;
+}
+
+function escapedFieldsAndValues( $db , $hash ) {
+	$escapedFieldsList = array();
+	$escapedValuesList = array();
+	foreach ($hash as $key => $value) {
+		$escapedField = mysqli_real_escape_string( $db , $key );
+		if (is_null($value)) {
+			$escapedValue = "NULL";
+		} else {
+			if ($value instanceof DateTime) {
+				$escapedValue = "'" . $value->format("Y-m-d H:i:s") . "'";
+			} else if (is_string($value)){
+				$escapedValue = "'" . mysqli_real_escape_string( $db, $value ) . "'";
+			} else {
+				$escapedValue = $value;
+			}
+		}
+		array_push( $escapedFieldsList , $escapedField );
+		array_push( $escapedValuesList , $escapedValue );
+  }
+	$fields = implode( ",", $escapedFieldsList );
+	$values = implode( ",", $escapedValuesList );
+	return array($fields,$values);
 }
 
 ?>

@@ -4,6 +4,11 @@ This is now under constructing...
 
 # Note
 
+# 構造修正
+
+重要処理は、すべてlib.phpに持って行く。
+core.phpは、lib.phpを呼び出すだけの仕組みにする。
+
 # ユーザー登録
 
 ### 基本フロー

@@ -24,7 +24,7 @@ function me($key = null) {
 	return $me;
 }
 
-function search_confirm_key($key) {
+function search_confirm_key($key,$isExist=false) {
 	global $table;
 	global $table_keys;
 	$db = db_open();
@@ -47,7 +47,11 @@ function search_confirm_key($key) {
 	}
 
   if ($key_data != null) {
-  	$condition = "created_at IS NOT NULL and activated_at IS NULL AND paused_at is NULL and deleted_at IS NULL AND ";
+		if ($isExist) {
+			$condition = "created_at IS NOT NULL and activated_at IS NOT NULL AND paused_at IS NULL and deleted_at IS NULL AND ";
+		} else {
+			$condition = "created_at IS NOT NULL and activated_at IS NULL AND paused_at is NULL and deleted_at IS NULL AND ";
+		}
 	  $condition .= "id = '" . mysqli_real_escape_string( $db , $key_data["member_id"] ) . "'";
   	$sql = "SELECT * FROM " . $table . " WHERE " . $condition . ";";
   	$res = mysqli_query($db,$sql);
