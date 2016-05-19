@@ -40,8 +40,8 @@ function dispatchAction() {
 		return signupAction();
 	} else if ($action == "reminder") {
 		return reminderAction();
-	} else if ($action == "repassword") {
-		return repasswordAction();
+	} else if ($action == "reminder_edit") {
+		return reminderEditAction();
 	}
 	$data = array( "status" => "ERROR",
 			"code" => 110,
@@ -267,7 +267,7 @@ EOT;
 	return $data;
 }
 
-function repasswordAction() {
+function reminderEditAction() {
 	global $table;
 	global $table_keys;
 	$key_code = $_POST["key"];

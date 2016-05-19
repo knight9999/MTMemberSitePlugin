@@ -16,7 +16,7 @@
   <body>
     <form>
     	<label>Reminder</label>
-    	<dt>Password</dt>
+    	<dt>new Password</dt>
     	<dd>
     		<input type="password" name="password">
     	</dd>
@@ -26,15 +26,15 @@
     	</dd>
     	<br><br>
     	<div>
-    	<button onclick="repassword(this); return false;">RePassword</button>
+    	<button onclick="reminderEdit(this); return false;">ReminderEdit</button>
     	</div>
     </form>
     <div id="link"></div>
     <script>
-		function repassword(btn) {
+		function reminderEdit(btn) {
 			var form = btn.form;
 			var password = form["password"].value;
-			memberSite.repassword( {  password : password, key : '<?php echo $confirm_key ?>' } ,
+			memberSite.reminderEdit( {  password : password, key : '<?php echo $confirm_key ?>' } ,
 					function(data) {
 						alert( JSON.stringify(data) );
 					},

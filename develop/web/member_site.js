@@ -1,6 +1,6 @@
 
-function MemberSite() { 
-	this.baseUrl = "member_site_core/";		
+function MemberSite() {
+	this.baseUrl = "member_site_core/";
 	this.me = null;
 }
 
@@ -24,7 +24,7 @@ MemberSite.prototype.login = function(account, password, success, failure) {
 	success = this.guard(success);
 	failure = this.guard(failure);
 	var self = this;
-	this.ajax_post({ 
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: { action : "login" , account : account , password : password } ,
 		success : function(data) {
@@ -46,7 +46,7 @@ MemberSite.prototype.getMe = function(success, failure) {
 	success = this.guard(success);
 	failure = this.guard(failure);
 	var self = this;
-	this.ajax_post({ 
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: { action : "me" } ,
 		success : function(data) {
@@ -67,7 +67,7 @@ MemberSite.prototype.logout = function(success, failure) {
 	success = this.guard(success);
 	failure = this.guard(failure);
 	var self = this;
-	this.ajax_post({ 
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: { action : "logout" } ,
 		success : function(data) {
@@ -89,7 +89,7 @@ MemberSite.prototype.edit = function(userData, success, failure) {
 	failure = this.guard(failure);
 	var self = this;
 	var data = { action : "edit" , data : userData };
-	this.ajax_post({ 
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: data ,
 		success : function(data) {
@@ -112,7 +112,7 @@ MemberSite.prototype.signup = function(userData, success, failure) {
 	failure = this.guard(failure);
 	var self = this;
 	var data = { action : "signup" , data : userData };
-	this.ajax_post({ 
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: data ,
 		success : function(data) {
@@ -135,7 +135,7 @@ MemberSite.prototype.reminder = function(email, success, failure) {
 	failure = this.guard(failure);
 	var self = this;
 	var data = { action : "reminder" , email : email };
-	this.ajax_post({ 
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: data ,
 		success : function(data) {
@@ -153,12 +153,12 @@ MemberSite.prototype.reminder = function(email, success, failure) {
 	});
 };
 
-MemberSite.prototype.repassword = function(data, success, failure) {
+MemberSite.prototype.reminderEdit = function(data, success, failure) {
 	success = this.guard(success);
 	failure = this.guard(failure);
 	var self = this;
-	var data = { action : "repassword" , password : data["password"] , key : data["key"] };
-	this.ajax_post({ 
+	var data = { action : "reminder_edit" , password : data["password"] , key : data["key"] };
+	this.ajax_post({
 		url : this.apiUrl( "action.php" ),
 		data: data ,
 		success : function(data) {
@@ -182,7 +182,7 @@ window.memberSite = new MemberSite();
 var settings = window.memberSiteSettings;
 
 if ( !(settings && settings.NoLoadLoginData) ) {
-	window.addEventListener("DOMContentLoaded" , function() { 
+	window.addEventListener("DOMContentLoaded" , function() {
 		memberSite.getMe();
 	}, false );
 }
@@ -202,9 +202,9 @@ MemberSite.prototype.ajax_post = function(options) {
         } else {
           if ( (200 <= xhr.status && xhr.status < 300) || xhr.status == 304 ) {
             if (options.success) {
-              options.success( JSON.parse(xhr.responseText) ); 
+              options.success( JSON.parse(xhr.responseText) );
             }
-          } 
+          }
         }
       }
     }
