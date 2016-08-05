@@ -1,9 +1,5 @@
 <?php
 
-class NotNull {
-
-};
-
 // Basic
 
 function db_open() {
